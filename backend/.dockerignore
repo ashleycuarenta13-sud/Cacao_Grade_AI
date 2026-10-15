@@ -1,0 +1,19 @@
+# Never let these into the API image.
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Secrets: Cloud Run injects environment configuration instead.
+.env
+.env.*
+.jwt_secret
+
+# Runtime state, not build input.
+uploads/
+*.log
+
+# Regenerated on demand, and a private key has no business in an image layer.
+Dockerfile
+.dockerignore

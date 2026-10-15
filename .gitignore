@@ -1,0 +1,44 @@
+# --------------------------------------------------------------------- secrets
+# Activity 3, Part F: ".env file is gitignored".
+.env
+.env.*
+!.env.example
+backend/.jwt_secret
+
+# ------------------------------------------------------------------ python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# -------------------------------------------------------------------- flutter
+# frontend/.gitignore already carries Flutter's own rules (build/, .dart_tool/,
+# plugins). Only repository-level concerns are added here. pubspec.lock IS
+# committed for an application - it pins the exact versions every contributor
+# and CI run builds against.
+frontend/.flutter-plugins
+frontend/.metadata
+*.iml
+
+# --------------------------------------------------------------- run artefacts
+backend/uploads/
+cnn_service/model/*.keras
+cnn_service/model/*.h5
+cnn_service/model/*.onnx
+cnn_service/*.log
+backend/*.log
+*.log
+
+# ----------------------------------------------------------------- certificates
+# make_cert.py regenerates these; never commit a private key.
+certs/key.pem
+certs/*.key
+*.pem.key
+
+# ----------------------------------------------------------------- editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

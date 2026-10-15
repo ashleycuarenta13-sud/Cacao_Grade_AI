@@ -1,0 +1,18 @@
+# CacaoGrade AI - API service (Activity 3, Part A / Part D)
+#
+# Installed and verified locally against the running backend. Versions are
+# pinned so a container rebuild and a teammate's laptop resolve the same
+# dependency tree - an unpinned FastAPI or pydantic is a common source of
+# "works on mine" between the three members.
+fastapi==0.143.0
+uvicorn==0.54.0
+httpx==0.28.1
+pydantic==2.14.1
+python-multipart==0.0.32
+psycopg2-binary==2.9.13
+
+# Activity 3, Part A - "JWT-based authentication issued at login".
+# These two are what make `import jwt` and its ES/HS backends work; they were
+# missing from the original list, which broke a fresh install.
+pyjwt==2.15.1
+cryptography==50.0.2

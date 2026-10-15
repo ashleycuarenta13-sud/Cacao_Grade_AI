@@ -1,0 +1,9 @@
+# CacaoGrade AI - CNN inference service (the document's /ml-service)
+#
+# Pinned to the versions verified in cnn_service/.venv so a container rebuild
+# resolves the same tree as a teammate's machine.
+fastapi==0.143.1
+uvicorn==0.54.0
+python-multipart==0.0.32
+pillow==12.3.0
+numpy==2.5.4

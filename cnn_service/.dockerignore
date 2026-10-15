@@ -1,0 +1,17 @@
+# Never let these into the inference image.
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# A trained model is provisioned separately (mounted or copied at deploy
+# time), not committed to the repository.
+model/*.keras
+model/*.h5
+model/*.onnx
+
+*.log
+
+Dockerfile
+.dockerignore
