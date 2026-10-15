@@ -4,8 +4,9 @@ import 'dart:typed_data';
 import 'package:cacao/core/api_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'fake_backend.dart';
 
 /// Covers the Flutter side of Activity 2, Part D: the client sends the photo
 /// with the session token and renders whatever business logic the backend
@@ -29,7 +30,7 @@ void main() {
   test('classify posts the photo as multipart with the bearer token', () async {
     http.Request? seen;
 
-    CacaoApi.client = MockClient((request) async {
+    CacaoApi.client = fakeBackend((request) async {
       seen = request;
       return http.Response(jsonEncode(payload), 200,
           headers: {'content-type': 'application/json'});
@@ -56,7 +57,10 @@ void main() {
     expect(seen!.headers['content-type'], contains('multipart/form-data'));
 
     final body = utf8.decode(seen!.bodyBytes);
-    expect(body, contains('content-type: image/png'));
+    // dio and package:http differ only in how they capitalise a part header,
+    // so the check is on the value rather than on the spelling.
+    final wire = body.toLowerCase();
+    expect(wire, contains('content-type: image/png'));
     expect(body, contains('filename="cut-test.png"'));
     expect(body, contains('North Plot 001'));
     expect(body, contains('Harvested after six days.'));
@@ -64,7 +68,7 @@ void main() {
   });
 
   test('classify surfaces the backend error and its status code', () async {
-    CacaoApi.client = MockClient((request) async => http.Response(
+    CacaoApi.client = fakeBackend((request) async => http.Response(
         jsonEncode({'detail': 'Session expired or not logged in.'}), 401,
         headers: {'content-type': 'application/json'}));
 
@@ -83,7 +87,7 @@ void main() {
   test('classify reports an unreachable backend instead of failing silently',
       () async {
     CacaoApi.client =
-        MockClient((request) async => throw http.ClientException('down'));
+        fakeBackend((request) async => throw http.ClientException('down'));
 
     await expectLater(
       CacaoApi.classify(
@@ -99,7 +103,7 @@ void main() {
     Future<String> send(String fileName) async {
       Uint8List? bodyBytes;
 
-      CacaoApi.client = MockClient((request) async {
+      CacaoApi.client = fakeBackend((request) async {
         bodyBytes = request.bodyBytes;
         return http.Response(jsonEncode(payload), 200,
             headers: {'content-type': 'application/json'});
@@ -114,7 +118,9 @@ void main() {
       return utf8.decode(bodyBytes!);
     }
 
-    expect(await send('beans.PNG'), contains('content-type: image/png'));
-    expect(await send('beans.jpg'), contains('content-type: image/jpeg'));
+    expect(await send('beans.PNG').then((b) => b.toLowerCase()),
+        contains('content-type: image/png'));
+    expect(await send('beans.jpg').then((b) => b.toLowerCase()),
+        contains('content-type: image/jpeg'));
   });
 }

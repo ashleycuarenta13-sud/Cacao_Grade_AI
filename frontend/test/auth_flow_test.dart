@@ -6,12 +6,14 @@ import 'package:cacao/core/models.dart';
 import 'package:cacao/core/pending_uploads.dart';
 import 'package:cacao/core/state.dart';
 import 'package:cacao/main.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'fake_backend.dart';
 
 /// The payload shape the FastAPI backend returns for `/api/auth/*`.
 const Map<String, dynamic> _farmerJson = {
@@ -98,7 +100,7 @@ const List<String> _roleSlugs = [
 ];
 
 /// Stands in for the FastAPI backend so the widget tests never hit the network.
-MockClient buildMockClient({
+Dio buildMockClient({
   Map<String, dynamic>? user,
   bool failLogin = false,
   List<Map<String, dynamic>>? users,
@@ -113,7 +115,7 @@ MockClient buildMockClient({
   /// really did replay the photo.
   List<int>? classifyCalls,
 }) {
-  return MockClient((request) async {
+  return fakeBackend((request) async {
     const headers = {'content-type': 'application/json'};
 
     // PATCH /api/admin/users/{id} - role assignment, admins only.

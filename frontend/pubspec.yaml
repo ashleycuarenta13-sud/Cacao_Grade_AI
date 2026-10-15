@@ -39,12 +39,23 @@ dependencies:
   shared_preferences: ^2.5.6
   file_picker: 10.3.7
   intl: ^0.20.3
-  http: ^1.6.0
   http_parser: ^4.1.2
+
+  # Activity 3, Part B - the prescribed client package set: dio (HTTP),
+  # Riverpod (state, above), image_picker (camera/gallery) and fl_chart
+  # (dashboard trends).
+  dio: ^5.11.1
+  image_picker: ^1.2.4
+  fl_chart: ^1.2.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  # package:http is a test-only seam: the fake adapter in test/ speaks
+  # package:http request/response objects so its handlers read the same way
+  # they did before the client moved to dio. Nothing under lib/ imports it.
+  http: ^1.6.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

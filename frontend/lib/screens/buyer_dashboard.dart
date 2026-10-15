@@ -90,8 +90,6 @@ class _Overview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = Pal.of(context);
-
     final graded = batches.where((b) => b.stage != null).toList();
     final farmers = batches.map((b) => b.farmer).where((n) => n.isNotEmpty).toSet();
     final avg = trends?['average_confidence'];
