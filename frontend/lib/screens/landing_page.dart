@@ -1,10 +1,11 @@
 import 'dart:typed_data';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../core/api_service.dart';
 import '../core/models.dart';
+import '../core/pick_image.dart';
 import '../core/state.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
@@ -751,17 +752,30 @@ class _AnalysisDialogState extends State<_AnalysisDialog> {
   String _error = '';
 
   Future<void> _pick() async {
-    final res = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
-      withData: true,
-    );
-    if (res == null || res.files.isEmpty || res.files.first.bytes == null) return;
-    setState(() {
-      _bytes = res.files.first.bytes;
-      _done = false;
-      _error = '';
-    });
+    try {
+      // Same helper the signed-in upload screen uses, so this demo dialog
+      // applies Part C's jpg/png and 10 MB checks too.
+      final picked = await pickCacaoImage(ImageSource.gallery);
+      if (picked == null) return; // cancelled
+
+      setState(() {
+        _bytes = picked.bytes;
+        _done = false;
+        _error = '';
+      });
+    } on ImagePickException catch (error) {
+      setState(() {
+        _bytes = null;
+        _done = false;
+        _error = error.message;
+      });
+    } catch (_) {
+      setState(() {
+        _bytes = null;
+        _done = false;
+        _error = 'Could not read that image. Please try another one.';
+      });
+    }
   }
 
   Future<void> _run() async {

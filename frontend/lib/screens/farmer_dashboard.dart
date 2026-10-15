@@ -1,16 +1,15 @@
 import 'dart:typed_data';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../core/api_service.dart';
 import '../core/dashboard_shell.dart';
 import '../core/models.dart';
 import '../core/pending_uploads.dart';
+import '../core/pick_image.dart';
 import '../core/state.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
-
-const _maxFileSize = 5 * 1024 * 1024;
 
 class FarmerDashboard extends ConsumerWidget {
   final AppUser user;
@@ -227,28 +226,25 @@ class _ClassifyState extends ConsumerState<_Classify> {
   String _fmtSize(int b) =>
       b < 1024 * 1024 ? '${(b / 1024).toStringAsFixed(1)} KB' : '${(b / (1024 * 1024)).toStringAsFixed(2)} MB';
 
-  Future<void> _pick() async {
-    final res = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png'],
-      withData: true,
-    );
-    if (res == null || res.files.isEmpty) return;
-    final f = res.files.first;
-    if (f.bytes == null || f.size == 0) {
-      _msg('The selected image is empty.', error: true);
-      return;
+  /// Part C's `ImagePickerButton` - the single path every way of getting a
+  /// photo in (camera or gallery) takes, so validation cannot be bypassed by
+  /// choosing one entry point over the other.
+  Future<void> _pick(ImageSource source) async {
+    try {
+      final picked = await pickCacaoImage(source);
+      if (picked == null) return; // user cancelled - not a failure
+
+      setState(() {
+        _bytes = picked.bytes;
+        _fileName = picked.fileName;
+        _size = picked.size;
+      });
+      _msg('Image ready for submission.');
+    } on ImagePickException catch (error) {
+      _msg(error.message, error: true);
+    } catch (_) {
+      _msg('Could not read that image. Please try another one.', error: true);
     }
-    if (f.size > _maxFileSize) {
-      _msg('The image exceeds the 5 MB file-size limit.', error: true);
-      return;
-    }
-    setState(() {
-      _bytes = f.bytes;
-      _fileName = f.name;
-      _size = f.size;
-    });
-    _msg('Image ready for submission.');
   }
 
   void _remove() {
@@ -459,7 +455,7 @@ class _ClassifyState extends ConsumerState<_Classify> {
             ),
             const SizedBox(height: 14),
             InkWell(
-              onTap: _pick,
+              onTap: () => _pick(ImageSource.gallery),
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 width: double.infinity,
@@ -474,9 +470,28 @@ class _ClassifyState extends ConsumerState<_Classify> {
                   const SizedBox(height: 6),
                   Text('Upload Cut-Test Photo', style: TextStyle(fontWeight: FontWeight.w800, color: p.text)),
                   Text('Choose a clear image of the cut cacao beans.', style: TextStyle(fontSize: 12, color: p.muted)),
-                  Text('JPG or PNG · Maximum 5 MB', style: TextStyle(fontSize: 11, color: p.muted)),
-                  const SizedBox(height: 10),
-                  OutlinedButton(onPressed: _pick, child: const Text('Choose Image')),
+                  Text('JPG or PNG · Maximum 10 MB', style: TextStyle(fontSize: 11, color: p.muted)),
+                  const SizedBox(height: 12),
+                  // Part C names this screen "Upload / Capture Bean Photo", so
+                  // both ways of getting a photo in are offered side by side
+                  // rather than hiding capture behind the file dialog.
+                  Row(children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => _pick(ImageSource.camera),
+                        icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                        label: const Text('Capture Photo'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _pick(ImageSource.gallery),
+                        icon: const Icon(Icons.photo_library_outlined, size: 18),
+                        label: const Text('Choose Image'),
+                      ),
+                    ),
+                  ]),
                 ]),
               ),
             ),
