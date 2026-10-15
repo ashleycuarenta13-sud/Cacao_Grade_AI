@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'api_service.dart';
-import 'models.dart';
+import 'package:cacao/services/api_service.dart';
+import 'package:cacao/models/models.dart';
 
 const _kTheme = 'ACC_theme';
 const _kBatches = 'ACC_farmer_batches';

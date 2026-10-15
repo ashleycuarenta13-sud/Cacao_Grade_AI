@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'api_service.dart';
-import 'state.dart';
-import 'theme.dart';
+import 'package:cacao/services/api_service.dart';
+import 'package:cacao/providers/state.dart';
+import 'package:cacao/theme.dart';
 
 class NavItem {
   final IconData icon;

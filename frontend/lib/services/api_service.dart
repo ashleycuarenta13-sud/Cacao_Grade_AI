@@ -5,28 +5,10 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'models.dart';
-
-/// Base URL of the CacaoGrade AI FastAPI backend.
-///
-/// - Windows / macOS / Linux / iOS simulator -> http://127.0.0.1:8000
-/// - Android emulator                         -> http://10.0.2.2:8000
-/// - Real phone                               -> `http://<your-PC-LAN-IP>:8000`
-///
-/// Override it without editing this file by passing a `--dart-define`, which is
-/// how the HTTPS setup switches schemes:
-///
-/// ```bash
-/// flutter run -d chrome --dart-define=CACAO_API=https://127.0.0.1:8000
-/// ```
-///
-/// The HTTPS setup uses the self-signed certificate from `backend/make_cert.py`,
-/// so the browser will warn you once on localhost. Accept it for localhost, and
-/// use a real certificate for anything public.
-const String kApiBaseUrl = String.fromEnvironment(
-  'CACAO_API',
-  defaultValue: 'http://127.0.0.1:8000',
-);
+// kApiBaseUrl - where the backend is - lives in constants/ so the services,
+// the screens and any future client all read the same value.
+import 'package:cacao/constants/app_constants.dart';
+import 'package:cacao/models/models.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -66,7 +48,7 @@ class JwtInterceptor extends Interceptor {
 
 /// HTTP client for `/api/*`.
 ///
-/// The signed-in account itself lives in [authProvider] (`core/state.dart`);
+/// The signed-in account itself lives in [authProvider] (`providers/state.dart`);
 /// this class only owns the bearer token and the transport.
 class CacaoApi {
   /// The client every endpoint goes through.
@@ -89,7 +71,7 @@ class CacaoApi {
       // below decides what each one means, which is what keeps 422 (the photo
       // is unusable - never retry) distinguishable from 502/503 (the CNN
       // service hiccuped - queue it and retry), and the offline queue in
-      // core/pending_uploads.dart depends on that distinction.
+      // providers/pending_uploads.dart depends on that distinction.
       validateStatus: (status) => status != null && status < 600,
 
       responseType: ResponseType.json,

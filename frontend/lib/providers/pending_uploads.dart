@@ -24,15 +24,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'api_service.dart';
-import 'state.dart';
-
-/// How often the queue replays itself.
-///
-/// Short enough that a farmer who left the tab open notices the recovery
-/// quickly, long enough that an unreachable backend is not hammered while it
-/// is down.
-const Duration kPendingRetryInterval = Duration(seconds: 20);
+import 'package:cacao/constants/app_constants.dart';
+import 'package:cacao/services/api_service.dart';
+import 'package:cacao/providers/state.dart';
 
 const String _storageKey = 'pending_uploads';
 

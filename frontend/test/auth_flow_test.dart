@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:cacao/core/api_service.dart';
-import 'package:cacao/core/models.dart';
-import 'package:cacao/core/pending_uploads.dart';
-import 'package:cacao/core/state.dart';
-import 'package:cacao/main.dart';
+import 'package:cacao/services/api_service.dart';
+import 'package:cacao/models/models.dart';
+import 'package:cacao/providers/pending_uploads.dart';
+import 'package:cacao/providers/state.dart';
+import 'package:cacao/app.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

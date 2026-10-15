@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/dashboard_shell.dart';
-import '../core/models.dart';
-import '../core/state.dart';
-import '../core/theme.dart';
-import '../core/widgets.dart';
+import 'package:cacao/widgets/dashboard_shell.dart';
+import 'package:cacao/models/models.dart';
+import 'package:cacao/providers/state.dart';
+import 'package:cacao/theme.dart';
+import 'package:cacao/widgets/widgets.dart';
 
 class StaffDashboard extends ConsumerWidget {
   final AppUser user;

@@ -2,14 +2,14 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import '../core/api_service.dart';
-import '../core/dashboard_shell.dart';
-import '../core/models.dart';
-import '../core/pending_uploads.dart';
-import '../core/pick_image.dart';
-import '../core/state.dart';
-import '../core/theme.dart';
-import '../core/widgets.dart';
+import 'package:cacao/services/api_service.dart';
+import 'package:cacao/widgets/dashboard_shell.dart';
+import 'package:cacao/models/models.dart';
+import 'package:cacao/providers/pending_uploads.dart';
+import 'package:cacao/services/pick_image.dart';
+import 'package:cacao/providers/state.dart';
+import 'package:cacao/theme.dart';
+import 'package:cacao/widgets/widgets.dart';
 
 class FarmerDashboard extends ConsumerWidget {
   final AppUser user;

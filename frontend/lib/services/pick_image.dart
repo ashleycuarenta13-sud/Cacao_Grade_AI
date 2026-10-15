@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 
+import 'package:cacao/constants/app_constants.dart';
+
 /// Activity 3, Part C's *Upload / Capture Bean Photo* screen.
 ///
 /// The document names `image_picker` as the package behind its
@@ -33,14 +35,6 @@ class ImagePickException implements Exception {
   @override
   String toString() => message;
 }
-
-/// The bound Part C states for this screen - *"File type (jpg/png) and size
-/// (<10MB) check"* - kept identical to `MAX_IMAGE_BYTES` in the API so the two
-/// halves can never disagree about what is acceptable.
-const int kMaxImageBytes = 10 * 1024 * 1024;
-
-/// What Part C allows through: `jpg/png`.
-const List<String> kAllowedImageExtensions = ['jpg', 'jpeg', 'png'];
 
 /// Lower-cased extension of [fileName], or null when it has none.
 String? imageExtensionOf(String fileName) {

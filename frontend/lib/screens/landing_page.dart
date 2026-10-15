@@ -3,17 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import '../core/api_service.dart';
-import '../core/models.dart';
-import '../core/pick_image.dart';
-import '../core/state.dart';
-import '../core/theme.dart';
-import '../core/widgets.dart';
-import 'admin_dashboard.dart';
-import 'buyer_dashboard.dart';
-import 'extension_worker_dashboard.dart';
-import 'farmer_dashboard.dart';
-import 'staff_dashboard.dart';
+import 'package:cacao/services/api_service.dart';
+import 'package:cacao/models/models.dart';
+import 'package:cacao/services/pick_image.dart';
+import 'package:cacao/providers/state.dart';
+import 'package:cacao/theme.dart';
+import 'package:cacao/widgets/widgets.dart';
+import 'package:cacao/routes/app_routes.dart';
+import 'package:cacao/screens/admin_dashboard.dart';
+import 'package:cacao/screens/buyer_dashboard.dart';
+import 'package:cacao/screens/extension_worker_dashboard.dart';
+import 'package:cacao/screens/farmer_dashboard.dart';
+import 'package:cacao/screens/staff_dashboard.dart';
 
 class LandingPage extends ConsumerStatefulWidget {
   const LandingPage({super.key});
@@ -49,7 +50,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
   Widget portalFor(AppUser user) => buildPortal(user);
 
   void _openDashboard(AppUser user) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => portalFor(user)));
+    Navigator.of(context).push(AppRoutes.page(portalFor(user)));
   }
 
   Future<void> _logout() async {
@@ -555,7 +556,7 @@ class _AuthDialogState extends ConsumerState<_AuthDialog> {
 
   void _openPortal(NavigatorState nav, AppUser user) {
     nav.pop();
-    nav.push(MaterialPageRoute(builder: (_) => buildPortal(user)));
+    nav.push(AppRoutes.page(buildPortal(user)));
   }
 
   /// Pulls the full account list so the admin portal shows real users.
