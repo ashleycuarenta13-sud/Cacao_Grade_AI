@@ -63,6 +63,13 @@ async def predict_image(file: UploadFile = File(...)):
             status_code=422, detail=f"Could not read the image: {exc}"
         ) from exc
 
+    if result["predicted_class"] == "not_cacao":
+        raise HTTPException(
+            status_code=422,
+            detail="This does not look like a cacao bean photo. "
+                   "Please upload a clear photo of cut cacao beans.",
+        )
+        
     return {
         "status": "success",
         "filename": file.filename,

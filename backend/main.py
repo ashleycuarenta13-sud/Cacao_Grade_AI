@@ -1,6 +1,8 @@
 import os
 import re
 import uuid
+import base64
+from anthropic import AsyncAnthropic
 from datetime import datetime
 from pathlib import Path
 
@@ -187,12 +189,20 @@ QUALITY_NOTES = {
 }
 
 RECOMMENDATIONS = {
-    "unfermented": "Dili pa fermented. Kinahanglan pa kining ipa-ferment pag-usab.",
-    "partially_fermented": "Kulang pa ang fermentation para maabot ang husto nga quality.",
-    "well_fermented": "Well-fermented cacao bean. Maayo para sa premium chocolate production.",
-    "over_fermented": "Sobra na ang fermentation. Mahimong makaapekto sa flavor quality."
+    "unfermented": "Not yet fermented. The beans need to be fermented again.",
+    "partially_fermented": "Fermentation is still incomplete and has not reached the desired quality.",
+    "well_fermented": "Well-fermented cacao beans. Suitable for premium chocolate production.",
+    "over_fermented": "Over-fermented. This may negatively affect flavor quality."
 }
 
+# Below this confidence the result is treated as unreliable and the
+# recommendation tells the user to retake the photo.
+LOW_CONFIDENCE_THRESHOLD = 0.60
+
+LOW_CONFIDENCE_NOTE = (
+    " Confidence is low, so retake the photo in even lighting with the "
+    "beans cut open and in focus, then submit it again."
+)
 
 def _normalise_class(label) -> str:
     """Maps any stage spelling ('well-fermented', 'Well Fermented') onto the
@@ -268,6 +278,69 @@ def database_test():
         "message": "Backend is connected to PostgreSQL!"
     }
 
+AI_MODEL = os.getenv("CACAO_AI_MODEL", "claude-haiku-5-5")
+
+AI_SYSTEM_PROMPT = (
+    "You assist cacao farmers in the Philippines. You receive a cut-test photo "
+    "and the result of an automatic fermentation classifier. Write a short "
+    "recommendation in plain English (2 to 3 sentences) based on what you can "
+    "see in the photo and the classifier result. Give practical next steps such "
+    "as fermentation, drying or re-checking the batch. Do not invent numbers, "
+    "dates or diagnoses you cannot see. If the photo does not clearly show cut "
+    "cacao beans, or the confidence is low, say so and ask for a clearer photo. "
+    "Reply with the recommendation text only."
+)
+
+
+async def ai_recommendation(
+    image_bytes: bytes,
+    content_type: str,
+    stage: str,
+    confidence: float,
+    quality_notes: str | None,
+    fallback: str,
+) -> str:
+    """Photo-specific advice from Claude; falls back to the rule-based text."""
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        return fallback
+
+    media_type = "image/png" if content_type == "image/png" else "image/jpeg"
+
+    try:
+        client = AsyncAnthropic(timeout=20.0)
+        message = await client.messages.create(
+            model=AI_MODEL,
+            max_tokens=250,
+            system=AI_SYSTEM_PROMPT,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": media_type,
+                            "data": base64.b64encode(image_bytes).decode("ascii"),
+                        },
+                    },
+                    {
+                        "type": "text",
+                        "text": (
+                            f"Classifier result: {stage.replace('_', ' ')} "
+                            f"({float(confidence) * 100:.1f}% confidence). "
+                            f"Reference note: {quality_notes or 'none'}"
+                        ),
+                    },
+                ],
+            }],
+        )
+        text = "".join(
+            block.text for block in message.content if block.type == "text"
+        ).strip()
+        return text or fallback
+    except Exception as exc:
+        print(f"AI recommendation failed, using rule-based text: {exc}")
+        return fallback
 
 @app.post("/api/classify")
 async def classify_image(
@@ -399,7 +472,18 @@ async def classify_image(
         predicted_class,
         "No recommendation available."
     )
+    if float(confidence) < LOW_CONFIDENCE_THRESHOLD:
+        recommendation += LOW_CONFIDENCE_NOTE
 
+        recommendation = await ai_recommendation(
+        image_bytes=image_bytes,
+        content_type=file.content_type,
+        stage=predicted_class,
+        confidence=confidence,
+        quality_notes=quality_notes,
+        fallback=recommendation,
+    )
+        
     clean_name = batch_name.strip()[:80]
     clean_notes = notes.strip()[:500]
 
@@ -694,14 +778,12 @@ def register(payload: RegisterRequest):
             email=payload.email,
             password=payload.password
         )
-        token = create_session(user["id"], user["role"])
     except AuthError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
     return {
         "status": "success",
-        "message": "Account created successfully.",
-        "token": token,
+        "message": "Account created successfully. Please log in.",
         "user": _public_user(user)
     }
 

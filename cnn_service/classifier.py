@@ -43,6 +43,10 @@ _STAGE_CENTRES = {
 }
 _SIGMA = (0.13, 0.08)
 
+# Distance (in sigma units) beyond which the photo matches no fermentation
+# stage and is treated as "not a cacao bean". Tune with real photos.
+NOT_CACAO_DISTANCE = 3.0
+
 _model = None
 _engine: Optional[str] = None
 _load_error = ""
@@ -145,27 +149,28 @@ def _predict_cnn(pixels: np.ndarray) -> tuple[str, float]:
 
 
 def _predict_heuristic(features: dict) -> tuple[str, float]:
-    """Gaussian score over (lightness, redness), then softmax."""
+    """Gaussian score over (lightness, redness); rejects photos that match no stage."""
     x = (features["lightness"], features["redness"])
 
-    scores = np.array(
-        [
-            math.exp(
-                -0.5
-                * sum(
-                    ((x[i] - _STAGE_CENTRES[label][i]) / _SIGMA[i]) ** 2
-                    for i in range(2)
-                )
+    dists = [
+        math.sqrt(
+            sum(
+                ((x[i] - _STAGE_CENTRES[label][i]) / _SIGMA[i]) ** 2
+                for i in range(2)
             )
-            for label in CLASS_LABELS
-        ],
-        dtype=np.float64,
-    )
+        )
+        for label in CLASS_LABELS
+    ]
 
-    probs = _softmax(scores)
+    print(f"lightness={x[0]:.3f} redness={x[1]:.3f} min_dist={min(dists):.2f}")
+        
+    if min(dists) > NOT_CACAO_DISTANCE:
+        return "not_cacao", 0.0
+
+    scores = np.array([math.exp(-0.5 * d * d) for d in dists], dtype=np.float64)
+    probs = scores / scores.sum() if scores.sum() > 0 else np.full(len(scores), 1 / len(scores))
     idx = int(np.argmax(probs))
     return CLASS_LABELS[idx], float(probs[idx])
-
 
 def predict(image_bytes: bytes) -> dict:
     """Runs the selected engine and returns the classification payload."""
