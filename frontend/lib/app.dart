@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:cacao/providers/state.dart';
-import 'package:cacao/screens/landing_page.dart';
+import 'package:cacao/screens/landing/landing_page.dart';
 import 'package:cacao/theme.dart';
 
 /// The widget tree of CacaoGrade AI.
