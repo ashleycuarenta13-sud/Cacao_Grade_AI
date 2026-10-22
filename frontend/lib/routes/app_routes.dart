@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 /// Route names and the route builder the application pushes with.
 ///
-/// Activity 8, Screenshot 2 lists `routes/` as part of the required `lib/`
-/// source tree.
 ///
 /// CacaoGrade AI's screens are switched in place by the bottom navigation bar
 /// (`widgets/dashboard_shell.dart`), so most navigation never leaves a single
