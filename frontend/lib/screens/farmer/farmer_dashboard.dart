@@ -12,6 +12,8 @@ import 'package:cacao/providers/state.dart';
 import 'package:cacao/theme.dart';
 import 'package:cacao/widgets/widgets.dart';
 import 'package:cacao/constants/app_constants.dart';
+import 'package:cacao/routes/app_routes.dart';
+import 'package:cacao/screens/report/report_form_screen.dart';
 
 class FarmerDashboard extends ConsumerWidget {
   final AppUser user;
@@ -155,10 +157,24 @@ class _Overview extends ConsumerWidget {
                       style: TextStyle(color: Colors.white70, height: 1.6),
                     ),
                     const SizedBox(height: 18),
-                    PrimaryButton(
-                      label: 'Classify Cacao Beans',
-                      icon: Icons.add_a_photo_outlined,
-                      onPressed: () => goTo(1),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        PrimaryButton(
+                          label: 'Classify Cacao Beans',
+                          icon: Icons.add_a_photo_outlined,
+                          onPressed: () => goTo(1),
+                        ),
+                        PrimaryButton(
+                          label: 'Report an Issue',
+                          icon: Icons.report_problem_outlined,
+                          onPressed: () => Navigator.push(
+                            context,
+                            AppRoutes.page(const ReportFormScreen()),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -395,7 +411,9 @@ class _ClassifyState extends ConsumerState<_Classify> {
           reason: reason,
         );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _busy = false;
       _bytes = null;
@@ -413,8 +431,9 @@ class _ClassifyState extends ConsumerState<_Classify> {
     if (name.isEmpty) return _msg('Please enter a batch name.', error: true);
 
     final bytes = _bytes;
-    if (bytes == null)
+    if (bytes == null) {
       return _msg('Please choose a valid cacao photo.', error: true);
+    }
 
     setState(() {
       _busy = true;
@@ -1051,8 +1070,7 @@ class _History extends ConsumerWidget {
                             '$kApiBaseUrl${r['image_url']}',
                             height: 140,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                const SizedBox.shrink(),
+                            errorBuilder: (_, _, _) => const SizedBox.shrink(),
                           ),
                         ),
                       ],

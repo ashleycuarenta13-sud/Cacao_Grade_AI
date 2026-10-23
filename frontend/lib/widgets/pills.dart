@@ -15,7 +15,7 @@ class PrimaryPill extends StatelessWidget {
       borderRadius: BorderRadius.circular(30),
       boxShadow: [
         BoxShadow(
-          color: const Color(0xFF583283).withOpacity(.3),
+          color: const Color(0xFF583283).withValues(alpha: 0.3),
           blurRadius: 24,
           offset: const Offset(0, 10),
         ),

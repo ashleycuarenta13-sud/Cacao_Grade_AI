@@ -36,8 +36,9 @@ class _LandingPageState extends ConsumerState<LandingPage> {
   }
 
   void _scrollTo(String k) {
-    if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false)
+    if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
       Navigator.of(context).pop();
+    }
     final c = _keys[k]?.currentContext;
     if (c != null) {
       Scrollable.ensureVisible(
@@ -179,9 +180,9 @@ class _LandingPageState extends ConsumerState<LandingPage> {
       height: 72,
       padding: EdgeInsets.symmetric(horizontal: w * .05),
       decoration: BoxDecoration(
-        color: const Color(0xFF26120B).withOpacity(.92),
+        color: const Color(0xFF26120B).withValues(alpha: 0.92),
         border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(.09)),
+          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.09)),
         ),
       ),
       child: Row(
@@ -256,8 +257,8 @@ class _LandingPageState extends ConsumerState<LandingPage> {
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: [
-            const Color(0xFF140906).withOpacity(.82),
-            const Color(0xFF140906).withOpacity(.5),
+            const Color(0xFF140906).withValues(alpha: 0.82),
+            const Color(0xFF140906).withValues(alpha: 0.5),
             Colors.transparent,
           ],
           stops: const [0, .32, .6],
@@ -318,7 +319,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                 onPressed: () => _scrollTo('how'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withOpacity(.6)),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.6)),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 16,
@@ -355,9 +356,9 @@ class _LandingPageState extends ConsumerState<LandingPage> {
   Widget _heroStageCard(_Stage s) => Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: const Color(0xFF1D0E09).withOpacity(.55),
+      color: const Color(0xFF1D0E09).withValues(alpha: 0.55),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.white.withOpacity(.12)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
     ),
     child: Row(
       children: [
@@ -573,7 +574,9 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                           const SizedBox(height: 10),
                           CircleAvatar(
                             radius: 26,
-                            backgroundColor: AppColors.violet.withOpacity(.12),
+                            backgroundColor: AppColors.violet.withValues(
+                              alpha: 0.12,
+                            ),
                             child: Icon(s.$2, color: AppColors.violet),
                           ),
                           const SizedBox(height: 12),
