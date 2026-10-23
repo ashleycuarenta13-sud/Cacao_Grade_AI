@@ -1,6 +1,6 @@
 -- 0001_init.sql - baseline schema for CacaoGrade AI
 --
--- Activity 3, Part E ("PostgreSQL Persistence") asks for four resources:
+-- ("PostgreSQL Persistence") asks for four resources:
 --
 --     users                  PK id; unique email; FK role_id -> roles.id
 --     roles                  PK id
