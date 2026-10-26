@@ -28,8 +28,7 @@ CLASS_LABELS = [
 ]
 
 MODEL_DIR = Path(__file__).resolve().parent / "model"
-MODEL_FILES = ("cacao_model.keras", "cacao_model.h5", "cacao_model.onnx")
-
+MODEL_FILES = ("cacao_model_v2.onnx", "cacao_model.keras", "cacao_model.h5", "cacao_model.onnx")
 IMAGE_SIZE = 224  # cut-test photos are downscaled before inference
 
 # (mean lightness, mean redness) expected per stage, following the cut-test
