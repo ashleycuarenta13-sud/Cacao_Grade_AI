@@ -1,0 +1,20 @@
+dataset\train\over_fermented\00051.jpg
+dataset\train\well_fermented\00084.jpg
+SHA256: 418fa0b2b6a2b4586d7dbb7900a367ed02587df0cb7c666921b4281dfcd7a50e
+
+dataset\train\over_fermented\00457.jpg
+dataset\valid\well_fermented\00040.jpg
+SHA256: 6bb92ba72fc4a9189b58c9309df8983a26bb73bdb16af6d1d2bd7582cf23a7a6
+
+dataset\train\partially_fermented\00079.jpg
+dataset\test\well_fermented\00043.jpg
+SHA256: db3ca4ac65aca7e33399c36f5c19e4d3948ed5ed87ff5b954cda958e300f0e23
+
+dataset\train\partially_fermented\00104.jpg
+dataset\train\well_fermented\00107.jpg
+SHA256: e8fe3d4fa83038ccc1e86225aa76c8244b31c32c4f9c1da250d33c6561c9c09a
+
+dataset\train\unfermented\00036.jpg
+dataset\test\partially_fermented\00083.jpg
+SHA256: 238e538535b005ab73b5c28708c8792b6ea7082736b602ff6dfb8ae2d4b827e3
+

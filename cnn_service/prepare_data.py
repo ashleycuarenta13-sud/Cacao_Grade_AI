@@ -1,98 +1,151 @@
-
-"""Prepare a reproducible train/valid/test dataset from class folders."""
-
+﻿from pathlib import Path
+from collections import defaultdict
+import hashlib
 import random
-import shutil
-from pathlib import Path
 from PIL import Image
 
 BASE = Path(__file__).resolve().parent
 SRC = BASE / "CacaoFermentations_dataset"
 DST = BASE / "dataset_v2"
-
-CLASSES = (
-    "unfermented",
-    "partially_fermented",
-    "well_fermented",
+CLASSES = [
     "over_fermented",
-)
-
-SPLITS = ("train", "valid", "test")
-SIZE = 224
+    "partially_fermented",
+    "unfermented",
+    "well_fermented",
+]
 SEED = 42
-EXTENSIONS = {".jpg", ".jpeg", ".png"}
+IMAGE_SIZE = (224, 224)
+
+
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
 
 def main():
     if not SRC.is_dir():
-        raise SystemExit(f"Source folder not found: {SRC}")
+        raise SystemExit(f"Source dataset not found: {SRC}")
 
-    # Do not overwrite an existing prepared dataset.
     if DST.exists():
         raise SystemExit(
-            f"{DST} already exists. Rename or back it up first."
+            f"{DST.name} already exists. Nothing was changed."
         )
+
+    for class_name in CLASSES:
+        if not (SRC / class_name).is_dir():
+            raise SystemExit(f"Missing class folder: {class_name}")
+
+    print("Checking exact duplicate images...")
+    files_by_hash = defaultdict(list)
+
+    for class_name in CLASSES:
+        for path in sorted((SRC / class_name).iterdir()):
+            if path.is_file() and path.suffix.lower() in {
+                ".jpg", ".jpeg", ".png", ".bmp", ".webp"
+            }:
+                files_by_hash[sha256_file(path)].append(path)
+
+    duplicate_groups = [
+        paths for paths in files_by_hash.values() if len(paths) > 1
+    ]
+    excluded = {
+        path for paths in duplicate_groups for path in paths
+    }
+
+    print(f"Duplicate groups found: {len(duplicate_groups)}")
+    print(f"Files excluded as duplicates: {len(excluded)}")
+
+    for number, paths in enumerate(duplicate_groups, start=1):
+        print(f"\nDuplicate group {number}:")
+        for path in paths:
+            print(f"  {path.relative_to(SRC)}")
+
+    clean_files = {}
+    for class_name in CLASSES:
+        clean_files[class_name] = [
+            path
+            for path in sorted((SRC / class_name).iterdir())
+            if path.is_file()
+            and path.suffix.lower() in {
+                ".jpg", ".jpeg", ".png", ".bmp", ".webp"
+            }
+            and path not in excluded
+        ]
+
+        if len(clean_files[class_name]) < 3:
+            raise SystemExit(
+                f"Not enough clean images in {class_name}."
+            )
+
+    print("\nClean images per class:")
+    for class_name, paths in clean_files.items():
+        print(f"  {class_name}: {len(paths)}")
 
     random.seed(SEED)
-    counts = {split: {} for split in SPLITS}
+    plan = {}
 
-    for cls in CLASSES:
-        source_dir = SRC / cls
+    for class_name, paths in clean_files.items():
+        paths = paths.copy()
+        random.shuffle(paths)
 
-        if not source_dir.is_dir():
-            raise SystemExit(f"Missing class folder: {source_dir}")
-
-        files = sorted(
-            f for f in source_dir.iterdir()
-            if f.is_file() and f.suffix.lower() in EXTENSIONS
-        )
-
-        if len(files) < 3:
-            raise SystemExit(f"Not enough images in class: {cls}")
-
-        random.shuffle(files)
-
-        total = len(files)
+        total = len(paths)
         train_end = int(total * 0.70)
-        valid_end = int(total * 0.85)
+        valid_end = train_end + int(total * 0.15)
 
-        split_files = {
-            "train": files[:train_end],
-            "valid": files[train_end:valid_end],
-            "test": files[valid_end:],
+        plan[class_name] = {
+            "train": paths[:train_end],
+            "valid": paths[train_end:valid_end],
+            "test": paths[valid_end:],
         }
 
-        for split, selected_files in split_files.items():
-            dest_dir = DST / split / cls
-            dest_dir.mkdir(parents=True, exist_ok=True)
+    # Create the destination only after validation succeeds.
+    for split in ("train", "valid", "test"):
+        for class_name in CLASSES:
+            (DST / split / class_name).mkdir(
+                parents=True, exist_ok=True
+            )
 
-            for index, file in enumerate(selected_files):
-                output_file = dest_dir / f"{index:05d}.jpg"
+    try:
+        for class_name in CLASSES:
+            for split, paths in plan[class_name].items():
+                target_dir = DST / split / class_name
 
-                with Image.open(file) as image:
-                    image.convert("RGB").resize(
-                        (SIZE, SIZE),
-                        Image.Resampling.BICUBIC,
-                    ).save(output_file, "JPEG", quality=90)
+                for index, source_path in enumerate(paths, start=1):
+                    target_path = target_dir / f"{index:05d}.jpg"
 
-            counts[split][cls] = len(selected_files)
+                    with Image.open(source_path) as image:
+                        image = image.convert("RGB")
+                        image = image.resize(
+                            IMAGE_SIZE, Image.Resampling.LANCZOS
+                        )
+                        image.save(
+                            target_path, "JPEG", quality=90
+                        )
 
-    print("\nDataset preparation complete.")
-    print(f"Source: {SRC}")
-    print(f"Destination: {DST}")
-    print(f"Random seed: {SEED}")
-    print("\nImage counts:")
+        print("\nDataset created successfully:", DST)
+        print("\nFinal image counts:")
+        for split in ("train", "valid", "test"):
+            print(f"\n{split}:")
+            split_total = 0
+            for class_name in CLASSES:
+                count = len(list(
+                    (DST / split / class_name).glob("*.jpg")
+                ))
+                split_total += count
+                print(f"  {class_name}: {count}")
+            print(f"  Total: {split_total}")
 
-    for split in SPLITS:
-        print(f"\n{split}:")
-        for cls in CLASSES:
-            print(f"  {cls}: {counts[split][cls]}")
-        print(f"  Total: {sum(counts[split].values())}")
+    except Exception:
+        print(
+            "\nERROR while creating dataset_v2. "
+            "Some output files may have been created; "
+            "do not rerun until the folder has been inspected."
+        )
+        raise
 
-    print(
-        "\nNote: images are split randomly within each class. "
-        "If multiple images come from the same original sample, "
-        "a sample-level split may be needed to avoid data leakage."
-    )
 
 if __name__ == "__main__":
     main()

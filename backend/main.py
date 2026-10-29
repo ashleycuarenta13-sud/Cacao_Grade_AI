@@ -2,6 +2,8 @@ import os
 import re
 import uuid
 import base64
+from fastapi import Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from anthropic import AsyncAnthropic
 from datetime import datetime
 from pathlib import Path
@@ -42,6 +44,13 @@ from auth import (
     list_users,
     update_user_role
 )
+
+bearer_scheme = HTTPBearer(auto_error=False)
+
+def get_auth_header(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> str:
+    return f"Bearer {credentials.credentials}" if credentials else ""
 
 app = FastAPI(
     title="Cacao Grade AI Backend API",
@@ -251,7 +260,6 @@ def startup_event():
     purge_expired_sessions()
 
 
-@app.get("/health")
 @app.get("/api/health")
 def health_check():
     try:
@@ -270,6 +278,10 @@ def health_check():
         "cnn_service": CNN_SERVICE_URL
     }
 
+
+@app.get("/health")
+def simple_health_check():
+    return {"status": "ok"}
 
 @app.get("/api/database-test")
 def database_test():
@@ -347,19 +359,12 @@ async def classify_image(
     file: UploadFile = File(...),
     batch_name: str = Form(default=""),
     notes: str = Form(default=""),
-    authorization: str = Header(default=""),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ):
-    """Activity 2, Part D end to end.
-
-    Step 4  verify the session token and the caller's role
-    Step 5  validate the photo server-side and store it
-    Step 6  forward the photo to the CNN inference service
-    Step 7  read back the predicted class and its confidence
-    Step 8  generate the quality note/recommendation and persist the record
-    Step 9  answer with the classification payload
-    """
+    
     # Step 4 - authentication + role check.
-    user = get_user_by_token(extract_bearer_token(authorization))
+    token = credentials.credentials if credentials else ""
+    user = get_user_by_token(token)
 
     if user is None:
         raise HTTPException(
@@ -557,7 +562,7 @@ def stored_image(name: str):
 
 
 @app.get("/api/history")
-def classification_history(authorization: str = Header(default="")):
+def classification_history(authorization: str = Depends(get_auth_header)):
     """Farmers read their own batch history; staff and admins read every record."""
     user = _require_user(authorization)
 
@@ -804,17 +809,29 @@ def login(payload: LoginRequest):
     }
 
 
+
+
+
 @app.get("/api/auth/me")
-def me(authorization: str = Header(default="")):
-    user = get_user_by_token(extract_bearer_token(authorization))
+def me(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme)
+):
+    token = credentials.credentials if credentials else ""
+    user = get_user_by_token(token)
 
     if user is None:
-        raise HTTPException(status_code=401, detail="Session expired or not logged in.")
+        raise HTTPException(
+            status_code=401,
+            detail="Session expired or not logged in."
+        )
 
     return {
         "status": "success",
         "user": _public_user(user)
     }
+
+
+
 
 
 class ProfileUpdate(BaseModel):
