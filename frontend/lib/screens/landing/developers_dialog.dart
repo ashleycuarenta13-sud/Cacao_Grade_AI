@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cacao/theme.dart';
 import 'package:cacao/widgets/modal_frame.dart';
 import 'package:cacao/widgets/widgets.dart';
+
+const _soft = Color(0xFFE6D8CF);
+const _gold = Color(0xFFE6AD67);
 
 class DevelopersDialog extends StatelessWidget {
   const DevelopersDialog({super.key});
@@ -23,9 +25,9 @@ class DevelopersDialog extends StatelessWidget {
             Text(
               'THE TEAM BEHIND CACAOGRADE AI',
               style: GoogleFonts.dmSans(
-                fontSize: 12,
-                letterSpacing: 2,
-                color: AppColors.violet,
+                fontSize: 11,
+                letterSpacing: 3,
+                color: _gold,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -35,14 +37,14 @@ class DevelopersDialog extends StatelessWidget {
               style: GoogleFonts.playfairDisplay(
                 fontSize: 30,
                 fontWeight: FontWeight.w700,
-                color: AppColors.brown800,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 4),
             const Text(
               'Three developers working together to bring smarter cacao assessment to mobile and web.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.mutedBrown),
+              style: TextStyle(color: _soft, height: 1.5),
             ),
             const SizedBox(height: 22),
             ResponsiveGrid(
@@ -52,20 +54,30 @@ class DevelopersDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: AppColors.cream,
+                      color: const Color(0x12FFFFFF),
                       borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0x26FFFFFF)),
                     ),
                     child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: AppColors.brown800,
+                        Container(
+                          width: 64,
+                          height: 64,
+                          alignment: Alignment.center,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF4A281C), Color(0xFF8D5838)],
+                            ),
+                          ),
                           child: Text(
                             d.$1,
-                            style: const TextStyle(
-                              color: AppColors.gold,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 18,
+                            style: GoogleFonts.playfairDisplay(
+                              color: const Color(0xFFF5D4A5),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 20,
                             ),
                           ),
                         ),
@@ -73,12 +85,15 @@ class DevelopersDialog extends StatelessWidget {
                         Text(
                           d.$2,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
                         ),
                         const Text(
                           'Developer',
                           style: TextStyle(
-                            color: AppColors.mutedBrown,
+                            color: Color(0xFFB9A79C),
                             fontSize: 12,
                           ),
                         ),
@@ -92,8 +107,8 @@ class DevelopersDialog extends StatelessWidget {
               'Code + Cacao = Impact',
               style: GoogleFonts.playfairDisplay(
                 fontStyle: FontStyle.italic,
-                color: AppColors.brown700,
-                fontSize: 16,
+                color: _gold,
+                fontSize: 17,
               ),
             ),
           ],

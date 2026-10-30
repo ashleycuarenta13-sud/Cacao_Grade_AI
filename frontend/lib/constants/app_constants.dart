@@ -1,5 +1,6 @@
 /// App-wide values that would otherwise be spelled out in more than one place.
 library;
+
 ///
 ///
 /// Nothing here is a secret: every entry is either a default a fresh checkout
@@ -23,7 +24,7 @@ library;
 /// use a real certificate for anything public.
 const String kApiBaseUrl = String.fromEnvironment(
   'CACAO_API',
-  defaultValue: 'http://127.0.0.1:8000',
+  defaultValue: 'http://192.168.0.102:8000',
 );
 
 /// The bound Activity 3, Part C states for the upload screen:

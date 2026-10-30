@@ -1,17 +1,82 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cacao/services/api_service.dart';
 import 'package:cacao/models/models.dart';
 import 'package:cacao/providers/state.dart';
-import 'package:cacao/theme.dart';
-import 'package:cacao/widgets/widgets.dart';
 import 'package:cacao/routes/app_routes.dart';
 import 'package:cacao/routes/portal.dart';
-import 'package:cacao/widgets/pills.dart';
 import 'package:cacao/screens/auth/auth_dialog.dart';
 import 'package:cacao/screens/landing/analysis_dialog.dart';
 import 'package:cacao/screens/landing/developers_dialog.dart';
+
+// ---------- palette (matches the stylesheet tokens) ----------
+class _C {
+  static const brown950 = Color(0xFF1D0E09);
+  static const brown900 = Color(0xFF29130C);
+  static const gold = Color(0xFFDCA650);
+  static const goldSoft = Color(0xFFE6AD67);
+  static const softText = Color(0xFFE6D8CF);
+  static const dimText = Color(0xFFD9C9BE);
+  static const barrier = Color(0x8C120805);
+}
+
+TextStyle _sans(
+  double size, {
+  Color color = Colors.white,
+  FontWeight weight = FontWeight.w400,
+  double? letterSpacing,
+  double height = 1.5,
+}) => GoogleFonts.dmSans(
+  fontSize: size,
+  color: color,
+  fontWeight: weight,
+  letterSpacing: letterSpacing,
+  height: height,
+);
+
+TextStyle _display(
+  double size, {
+  Color color = Colors.white,
+  FontWeight weight = FontWeight.w700,
+  bool italic = false,
+  double height = 1.12,
+}) => GoogleFonts.playfairDisplay(
+  fontSize: size,
+  color: color,
+  fontWeight: weight,
+  fontStyle: italic ? FontStyle.italic : FontStyle.normal,
+  height: height,
+);
+
+// ---------- frosted glass surface ----------
+Widget _glass({
+  required Widget child,
+  double radius = 18,
+  double blur = 14,
+  EdgeInsets padding = EdgeInsets.zero,
+  Color color = const Color(0x12FFFFFF),
+  Color border = const Color(0x26FFFFFF),
+}) {
+  final r = BorderRadius.circular(radius);
+  return ClipRRect(
+    borderRadius: r,
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+      child: Container(
+        padding: padding,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: r,
+          border: Border.all(color: border),
+        ),
+        child: child,
+      ),
+    ),
+  );
+}
 
 class LandingPage extends ConsumerStatefulWidget {
   const LandingPage({super.key});
@@ -49,12 +114,10 @@ class _LandingPageState extends ConsumerState<LandingPage> {
     }
   }
 
-  /// Picks the portal that matches the signed-in role.
   Widget portalFor(AppUser user) => buildPortal(user);
 
-  void _openDashboard(AppUser user) {
-    Navigator.of(context).push(AppRoutes.page(portalFor(user)));
-  }
+  void _openDashboard(AppUser user) =>
+      Navigator.of(context).push(AppRoutes.page(portalFor(user)));
 
   Future<void> _logout() async {
     ref.read(authProvider.notifier).signOut();
@@ -63,148 +126,183 @@ class _LandingPageState extends ConsumerState<LandingPage> {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  void _openAuth() =>
-      showDialog(context: context, builder: (_) => const AuthDialog());
-  void _openAnalysis() =>
-      showDialog(context: context, builder: (_) => const AnalysisDialog());
-  void _openDevs() =>
-      showDialog(context: context, builder: (_) => const DevelopersDialog());
+  void _openAuth() => showDialog(
+    context: context,
+    barrierColor: _C.barrier,
+    builder: (_) => const AuthDialog(),
+  );
+
+  void _openAnalysis() => showDialog(
+    context: context,
+    barrierColor: _C.barrier,
+    builder: (_) => const AnalysisDialog(),
+  );
+
+  void _openDevs() => showDialog(
+    context: context,
+    barrierColor: _C.barrier,
+    builder: (_) => const DevelopersDialog(),
+  );
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final wide = w >= 860;
+    final size = MediaQuery.of(context).size;
+    final w = size.width;
+    final wide = w >= 950;
     final session = ref.watch(authProvider);
+    final side = wide ? 40.0 : 18.0;
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: AppColors.cream,
-      endDrawer: wide
-          ? null
-          : Drawer(
-              backgroundColor: AppColors.brown900,
-              child: SafeArea(
-                child: ListView(
-                  padding: const EdgeInsets.all(20),
-                  children: [
-                    _drawerLink('Home', () => _scrollTo('home')),
-                    _drawerLink('About', () => _scrollTo('about')),
-                    _drawerLink('How It Works', () => _scrollTo('how')),
-                    _drawerLink('Developers', () {
-                      Navigator.of(context).pop();
-                      _openDevs();
-                    }),
-                    const SizedBox(height: 12),
-                    ..._sessionActions(
-                      session,
-                      beforeTap: () => Navigator.of(context).pop(),
-                    ),
-                  ],
+      backgroundColor: _C.brown950,
+      endDrawer: wide ? null : _drawer(session),
+      body: Stack(
+        children: [
+          // fixed background photo, like background-attachment: fixed
+          Positioned.fill(
+            child: Image.asset('assets/images/hero-bg.jpg', fit: BoxFit.cover),
+          ),
+          // dark layer so text stays readable
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xA61D0E09), Color(0xCC1D0E09)],
                 ),
               ),
             ),
-      body: Stack(
-        children: [
+          ),
           Positioned.fill(
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  _hero(context, w, wide),
-                  _stages(context, wide),
-                  _how(context),
-                  _cta(context),
+                  _hero(w, wide, size.height),
+                  _stages(wide),
+                  _how(wide),
+                  _cta(wide),
                   _footer(),
                 ],
               ),
             ),
           ),
+          // floating glass navbar
           Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: _navbar(wide, w, session),
+            top: wide ? 14 : 10,
+            left: side,
+            right: side,
+            child: _navbar(wide, session),
           ),
         ],
       ),
     );
   }
-
-  Widget _drawerLink(String t, VoidCallback f) => ListTile(
-    title: Text(
-      t,
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-    ),
-    onTap: f,
-  );
-
-  /// Login button when signed out; Dashboard + Log out when signed in.
-  List<Widget> _sessionActions(AppUser? session, {VoidCallback? beforeTap}) =>
-      session == null
-      ? [
-          LoginPill(
-            onTap: () {
-              beforeTap?.call();
-              _openAuth();
-            },
-          ),
-        ]
-      : [
-          LoginPill(
-            label: 'Dashboard',
-            background: AppColors.forest,
-            onTap: () {
-              beforeTap?.call();
-              _openDashboard(session);
-            },
-          ),
-          const SizedBox(width: 8),
-          LoginPill(
-            label: 'Log out',
-            background: AppColors.brown700,
-            onTap: () {
-              beforeTap?.call();
-              _logout();
-            },
-          ),
-        ];
 
   // ---------------- Navbar ----------------
-  Widget _navbar(bool wide, double w, AppUser? session) {
+  Widget _navbar(bool wide, AppUser? session) {
     Widget link(String t, VoidCallback f) => TextButton(
       onPressed: f,
-      style: TextButton.styleFrom(foregroundColor: const Color(0xFFF9EEE5)),
-      child: Text(t, style: const TextStyle(fontSize: 14)),
+      style: TextButton.styleFrom(
+        foregroundColor: const Color(0xFFF9EEE5),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        minimumSize: const Size(0, 40),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(t, style: _sans(14)),
     );
 
-    return Container(
-      height: 72,
-      padding: EdgeInsets.symmetric(horizontal: w * .05),
-      decoration: BoxDecoration(
-        color: const Color(0xFF26120B).withValues(alpha: 0.92),
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.09)),
+    return _glass(
+      radius: 20,
+      blur: 18,
+      padding: EdgeInsets.symmetric(horizontal: wide ? 22 : 16),
+      color: const Color(0x8C1E0E09),
+      border: const Color(0x1FFFFFFF),
+      child: SizedBox(
+        height: wide ? 72 : 62,
+        child: Row(
+          children: [
+            _brand(),
+            const Spacer(),
+            if (wide) ...[
+              link('Home', () => _scrollTo('home')),
+              link('About', () => _scrollTo('about')),
+              link('How It Works', () => _scrollTo('how')),
+              link('Developers', _openDevs),
+              const SizedBox(width: 10),
+              if (session == null)
+                _primaryBtn('Login', _openAuth, compact: true)
+              else ...[
+                _primaryBtn(
+                  'Dashboard',
+                  () => _openDashboard(session),
+                  compact: true,
+                ),
+                const SizedBox(width: 8),
+                _outlineBtn('Log out', _logout, compact: true),
+              ],
+            ] else
+              IconButton(
+                icon: const Icon(Icons.menu, color: Colors.white),
+                onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+              ),
+          ],
         ),
-      ),
-      child: Row(
-        children: [
-          _brand(),
-          const Spacer(),
-          if (wide) ...[
-            link('Home', () => _scrollTo('home')),
-            link('About', () => _scrollTo('about')),
-            link('How It Works', () => _scrollTo('how')),
-            link('Developers', _openDevs),
-            const SizedBox(width: 14),
-            ..._sessionActions(session),
-          ] else
-            IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-            ),
-        ],
       ),
     );
   }
+
+  Widget _drawer(AppUser? session) => Drawer(
+    backgroundColor: _C.brown900,
+    child: SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          _drawerLink('Home', () => _scrollTo('home')),
+          _drawerLink('About', () => _scrollTo('about')),
+          _drawerLink('How It Works', () => _scrollTo('how')),
+          _drawerLink('Developers', () {
+            Navigator.of(context).pop();
+            _openDevs();
+          }),
+          const SizedBox(height: 16),
+          if (session == null)
+            _primaryBtn(
+              'Login',
+              () {
+                Navigator.of(context).pop();
+                _openAuth();
+              },
+              full: true,
+            )
+          else ...[
+            _primaryBtn(
+              'Dashboard',
+              () {
+                Navigator.of(context).pop();
+                _openDashboard(session);
+              },
+              full: true,
+            ),
+            const SizedBox(height: 10),
+            _outlineBtn(
+              'Log out',
+              () {
+                Navigator.of(context).pop();
+                _logout();
+              },
+              full: true,
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+
+  Widget _drawerLink(String t, VoidCallback f) => ListTile(
+    title: Text(t, style: _sans(15, weight: FontWeight.w600)),
+    onTap: f,
+  );
 
   Widget _brand() => Row(
     mainAxisSize: MainAxisSize.min,
@@ -218,17 +316,13 @@ class _LandingPageState extends ConsumerState<LandingPage> {
       const SizedBox(width: 10),
       RichText(
         text: TextSpan(
-          style: GoogleFonts.dmSans(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
+          style: _sans(18, weight: FontWeight.w600),
           children: const [
             TextSpan(text: 'CacaoGrade '),
             TextSpan(
               text: 'AI',
               style: TextStyle(
-                color: AppColors.gold,
+                color: Color(0xFFE7B55F),
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -238,150 +332,268 @@ class _LandingPageState extends ConsumerState<LandingPage> {
     ],
   );
 
-  // ---------------- Hero ----------------
-  Widget _hero(BuildContext context, double w, bool wide) {
-    final h = MediaQuery.of(context).size.height;
+  // ---------------- Buttons ----------------
+  Widget _primaryBtn(
+    String label,
+    VoidCallback onTap, {
+    bool compact = false,
+    bool full = false,
+  }) {
+    final r = BorderRadius.circular(24);
     return Container(
-      key: _keys['home'],
-      constraints: BoxConstraints(minHeight: h < 700 ? 700 : h),
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(w * .08, 130, w * .08, 50),
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/hero-bg.jpg'),
-          fit: BoxFit.cover,
+      width: full ? double.infinity : null,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF8B5CC0), Color(0xFF6D469B)],
+        ),
+        borderRadius: r,
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x4058327C),
+            blurRadius: 25,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: r,
+        child: InkWell(
+          borderRadius: r,
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 20 : 24,
+              vertical: compact ? 9 : 13,
+            ),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: _sans(compact ? 13 : 15, weight: FontWeight.w700),
+            ),
+          ),
         ),
       ),
-      foregroundDecoration: BoxDecoration(
+    );
+  }
+
+  Widget _outlineBtn(
+    String label,
+    VoidCallback onTap, {
+    bool compact = false,
+    bool full = false,
+  }) {
+    final r = BorderRadius.circular(24);
+    return Container(
+      width: full ? double.infinity : null,
+      decoration: BoxDecoration(
+        borderRadius: r,
+        border: Border.all(color: const Color(0x73FFFFFF)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: r,
+        child: InkWell(
+          borderRadius: r,
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 18 : 22,
+              vertical: compact ? 9 : 12,
+            ),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: _sans(
+                compact ? 13 : 14,
+                weight: FontWeight.w600,
+                color: const Color(0xFFF9EEE5),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------- Hero ----------------
+  Widget _hero(double w, bool wide, double h) {
+    final hPad = wide ? w * .08 : 20.0;
+    final headSize = wide ? 62.0 : (w < 400 ? 34.0 : 42.0);
+
+    return Container(
+      key: _keys['home'],
+      width: double.infinity,
+      constraints: BoxConstraints(minHeight: h),
+      padding: EdgeInsets.fromLTRB(hPad, wide ? 132 : 108, hPad, 40),
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [
-            const Color(0xFF140906).withValues(alpha: 0.82),
-            const Color(0xFF140906).withValues(alpha: 0.5),
-            Colors.transparent,
-          ],
-          stops: const [0, .32, .6],
+          colors: [Color(0xD9140906), Color(0x66140906), Color(0x00140906)],
+          stops: [0, .45, .85],
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'SMART CACAO FERMENTATION',
-            style: GoogleFonts.dmSans(
-              fontSize: 12,
-              letterSpacing: 2.2,
-              color: AppColors.gold,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 14),
-          RichText(
-            text: TextSpan(
-              style: GoogleFonts.playfairDisplay(
-                fontSize: wide ? 68 : 40,
-                height: 1.08,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'FERMENTATION STAGE ASSESSMENT',
+                      style: _sans(
+                        11,
+                        color: _C.goldSoft,
+                        weight: FontWeight.w700,
+                        letterSpacing: 3.2,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    RichText(
+                      text: TextSpan(
+                        style: _display(headSize, height: 1.1),
+                        children: [
+                          const TextSpan(
+                            text: 'Consistent grading\nfor every ',
+                          ),
+                          TextSpan(
+                            text: 'batch.',
+                            style: _display(
+                              headSize,
+                              color: _C.gold,
+                              height: 1.1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 540),
+                      child: Text(
+                        'Submit a photograph of whole or cut-test beans to receive a fermentation stage classification, quality observations, and recommended next steps.',
+                        style: _sans(
+                          wide ? 17 : 15,
+                          color: _C.softText,
+                          height: 1.7,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    Wrap(
+                      spacing: 14,
+                      runSpacing: 12,
+                      children: [
+                        _primaryBtn('Analyze a Sample', _openAnalysis),
+                        _outlineBtn('View Process →', () => _scrollTo('how')),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+              if (wide) ...[
+                const SizedBox(width: 24),
+                _scanChip(),
+              ],
+            ],
+          ),
+          SizedBox(height: wide ? 70 : 40),
+          _glass(
+            radius: 26,
+            blur: 16,
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+            color: const Color(0x801E0E09),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const TextSpan(text: 'Know your cacao.\nGrade it '),
-                TextSpan(
-                  text: 'smarter.',
-                  style: TextStyle(
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.gold,
+                Text(
+                  'FERMENTATION STAGES',
+                  style: _sans(
+                    10,
+                    weight: FontWeight.w700,
+                    letterSpacing: 3,
+                    height: 1.4,
                   ),
+                ),
+                const SizedBox(height: 12),
+                _responsiveGrid(
+                  minItemWidth: 230,
+                  gap: 14,
+                  children: [for (final s in _stageData) _heroStageCard(s)],
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 18),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: const Text(
-              'Upload a cacao bean image and let AI determine the fermentation stage, quality notes, and recommendations.',
-              style: TextStyle(
-                fontSize: 17,
-                height: 1.6,
-                color: Color(0xFFF3E6DA),
-              ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          Wrap(
-            spacing: 14,
-            runSpacing: 12,
-            children: [
-              PrimaryPill(label: '✦ Analyze Cacao', onTap: _openAnalysis),
-              OutlinedButton(
-                onPressed: () => _scrollTo('how'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.6)),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  shape: const StadiumBorder(),
-                ),
-                child: const Text(
-                  'Learn More →',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 70),
-          Text(
-            'FERMENTATION STAGES',
-            style: GoogleFonts.dmSans(
-              fontSize: 12,
-              letterSpacing: 2.2,
-              color: AppColors.gold,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 14),
-          ResponsiveGrid(
-            minWidth: 230,
-            children: [for (final s in _stageData) _heroStageCard(s)],
           ),
         ],
       ),
     );
   }
 
-  Widget _heroStageCard(_Stage s) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: const Color(0xFF1D0E09).withValues(alpha: 0.55),
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+  Widget _scanChip() => Transform.rotate(
+    angle: 0.09,
+    child: _glass(
+      radius: 13,
+      blur: 10,
+      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13),
+      color: const Color(0xC724100A),
+      border: const Color(0x4DDEA650),
+      child: Text(
+        'Consistent Quality\nBetter Harvests',
+        style: _display(15, italic: true, height: 1.4),
+      ),
     ),
+  );
+
+  Widget _heroStageCard(_Stage s) => _glass(
+    radius: 16,
+    blur: 8,
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    color: const Color(0x0FFFFFFF),
+    border: const Color(0x1FFFFFFF),
     child: Row(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.asset(s.image, width: 56, height: 56, fit: BoxFit.cover),
+        ClipOval(
+          child: Image.asset(s.image, width: 52, height: 52, fit: BoxFit.cover),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 s.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: _sans(14, weight: FontWeight.w600, height: 1.3),
               ),
-              Text(
-                s.desc,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              const SizedBox(height: 3),
+              Row(
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: s.dot,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      s.desc,
+                      style: _sans(11, color: _C.dimText, height: 1.35),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -391,217 +603,154 @@ class _LandingPageState extends ConsumerState<LandingPage> {
   );
 
   // ---------------- Stages ----------------
-  Widget _sectionHead(
-    String eyebrow,
-    Color eyebrowColor,
-    String title, [
-    String? sub,
-  ]) => Column(
-    children: [
-      Text(
-        eyebrow,
-        style: GoogleFonts.dmSans(
-          fontSize: 12,
-          letterSpacing: 2.2,
-          color: eyebrowColor,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      const SizedBox(height: 10),
-      Text(
-        title,
-        textAlign: TextAlign.center,
-        style: GoogleFonts.playfairDisplay(
-          fontSize: 36,
-          fontWeight: FontWeight.w700,
-          color: AppColors.brown800,
-        ),
-      ),
-      if (sub != null) ...[
-        const SizedBox(height: 8),
+  Widget _sectionHead(String eyebrow, String title, [String? sub]) {
+    final narrow = MediaQuery.of(context).size.width < 650;
+    return Column(
+      children: [
         Text(
-          sub,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.mutedBrown),
-        ),
-      ],
-    ],
-  );
-
-  Widget _stages(BuildContext context, bool wide) {
-    return Container(
-      key: _keys['about'],
-      width: double.infinity,
-      color: AppColors.cream,
-      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 80),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1150),
-          child: Column(
-            children: [
-              _sectionHead(
-                'FERMENTATION STAGES',
-                AppColors.brown700,
-                'Understand the bean at a glance.',
-                'Four categories used by CacaoGrade AI for fermentation-stage assessment.',
-              ),
-              const SizedBox(height: 40),
-              ResponsiveGrid(
-                minWidth: 240,
-                gap: 20,
-                children: [
-                  for (final s in _stageData)
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: s.featured
-                              ? AppColors.gold
-                              : const Color(0xFFE6D8CF),
-                          width: s.featured ? 2 : 1,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x14000000),
-                            blurRadius: 20,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            height: 150,
-                            child: Image.asset(s.image, fit: BoxFit.contain),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            s.title,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textBrown,
-                            ),
-                          ),
-                          Text(
-                            s.desc,
-                            style: const TextStyle(
-                              color: AppColors.mutedBrown,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: s.dot,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ],
+          eyebrow,
+          style: _sans(
+            11,
+            color: _C.goldSoft,
+            weight: FontWeight.w700,
+            letterSpacing: 3.2,
+            height: 1.4,
           ),
         ),
-      ),
+        const SizedBox(height: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: _display(narrow ? 30 : 42, height: 1.14),
+          ),
+        ),
+        if (sub != null) ...[
+          const SizedBox(height: 12),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 620),
+            child: Text(
+              sub,
+              textAlign: TextAlign.center,
+              style: _sans(narrow ? 13 : 14, color: _C.softText, height: 1.6),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
-  // ---------------- How it works ----------------
-  Widget _how(BuildContext context) {
-    const steps = [
-      (
-        '01',
-        Icons.upload,
-        'Upload',
-        'Choose a clear photo of whole or cut-test cacao beans.',
+  Widget _stages(bool wide) => Container(
+    key: _keys['about'],
+    width: double.infinity,
+    padding: EdgeInsets.symmetric(horizontal: wide ? 56 : 20, vertical: 90),
+    child: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1250),
+        child: Column(
+          children: [
+            _sectionHead(
+              'STAGE CATEGORIES',
+              'Four stages, one consistent reference.',
+              'Every sample is classified into one of four fermentation stages based on visible indicators in the bean.',
+            ),
+            const SizedBox(height: 45),
+            _responsiveGrid(
+              minItemWidth: 250,
+              gap: 18,
+              children: [for (final s in _stageData) _stageCard(s)],
+            ),
+          ],
+        ),
       ),
-      (
+    ),
+  );
+
+  Widget _stageCard(_Stage s) => _glass(
+    radius: 18,
+    padding: const EdgeInsets.fromLTRB(22, 26, 22, 24),
+    child: Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.asset(s.image, width: 112, height: 92, fit: BoxFit.cover),
+        ),
+        const SizedBox(height: 20),
+        Text(s.title, style: _display(21, height: 1.2)),
+        const SizedBox(height: 8),
+        Text(
+          s.desc,
+          textAlign: TextAlign.center,
+          style: _sans(13, color: _C.softText, height: 1.5),
+        ),
+        const SizedBox(height: 18),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: s.dot, shape: BoxShape.circle),
+        ),
+      ],
+    ),
+  );
+
+  // ---------------- Process ----------------
+  Widget _how(bool wide) {
+    const steps = [
+      _Step(
+        '01',
+        Icons.upload_file_outlined,
+        'Upload',
+        'Submit a well-lit photograph of whole or cut-test beans.',
+      ),
+      _Step(
         '02',
         Icons.analytics_outlined,
         'Analyze',
-        'The computer vision model evaluates visible fermentation indicators.',
+        'The convolutional neural network assesses visible indicators such as color, uniformity, and surface condition.',
       ),
-      (
+      _Step(
         '03',
         Icons.check_circle_outline,
-        'Get Results',
-        'Receive a stage classification, quality notes, and recommendation.',
+        'Review Results',
+        'Receive a stage classification, supporting observations, and a recommended next step.',
       ),
     ];
+
     return Container(
       key: _keys['how'],
       width: double.infinity,
-      color: AppColors.cream2,
-      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 80),
+      padding: EdgeInsets.symmetric(horizontal: wide ? 56 : 20, vertical: 90),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1050),
+          constraints: const BoxConstraints(maxWidth: 1100),
           child: Column(
             children: [
-              _sectionHead(
-                'HOW IT WORKS',
-                AppColors.violet,
-                'From cacao photo to useful insight.',
-              ),
-              const SizedBox(height: 40),
-              ResponsiveGrid(
-                minWidth: 260,
-                gap: 22,
-                children: [
-                  for (final s in steps)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+              _sectionHead('PROCESS', 'From photograph to documented result.'),
+              const SizedBox(height: 45),
+              if (wide)
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: _stepCard(steps[0])),
+                      _connector(),
+                      Expanded(child: _stepCard(steps[1])),
+                      _connector(),
+                      Expanded(child: _stepCard(steps[2])),
+                    ],
+                  ),
+                )
+              else
+                Column(
+                  children: [
+                    for (final s in steps)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _stepCard(s),
                       ),
-                      child: Column(
-                        children: [
-                          Text(
-                            s.$1,
-                            style: GoogleFonts.playfairDisplay(
-                              fontSize: 14,
-                              color: AppColors.mutedBrown,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          CircleAvatar(
-                            radius: 26,
-                            backgroundColor: AppColors.violet.withValues(
-                              alpha: 0.12,
-                            ),
-                            child: Icon(s.$2, color: AppColors.violet),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            s.$3,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textBrown,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            s.$4,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: AppColors.mutedBrown,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -609,55 +758,92 @@ class _LandingPageState extends ConsumerState<LandingPage> {
     );
   }
 
+  Widget _connector() => SizedBox(
+    width: 70,
+    child: Row(
+      children: [
+        Expanded(
+          child: Container(height: 1, color: const Color(0x99E6AD67)),
+        ),
+        Text('›', style: _sans(24, color: _C.goldSoft, height: 1.6)),
+      ],
+    ),
+  );
+
+  Widget _stepCard(_Step s) => _glass(
+    radius: 18,
+    padding: const EdgeInsets.all(28),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          s.num,
+          style: _sans(11, color: const Color(0xFF9B8575), letterSpacing: 2),
+        ),
+        const SizedBox(height: 18),
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: const Color(0xFF72509A),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(s.icon, color: Colors.white, size: 24),
+        ),
+        const SizedBox(height: 18),
+        Text(s.title, style: _display(24, height: 1.15)),
+        const SizedBox(height: 8),
+        Text(s.desc, style: _sans(13, color: _C.softText, height: 1.6)),
+      ],
+    ),
+  );
+
   // ---------------- CTA + Footer ----------------
-  Widget _cta(BuildContext context) => Container(
+  Widget _cta(bool wide) => Container(
     width: double.infinity,
-    color: AppColors.cream,
-    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 70),
+    padding: EdgeInsets.symmetric(horizontal: wide ? 56 : 20, vertical: 80),
     child: Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1050),
-        child: Container(
-          padding: const EdgeInsets.all(34),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.brown900, AppColors.brown700],
-            ),
-            borderRadius: BorderRadius.circular(26),
+        constraints: const BoxConstraints(maxWidth: 1150),
+        child: _glass(
+          radius: 25,
+          blur: 10,
+          padding: EdgeInsets.symmetric(
+            horizontal: wide ? 45 : 26,
+            vertical: wide ? 40 : 30,
           ),
+          color: const Color(0xB824100A),
+          border: const Color(0x47DEA650),
           child: Wrap(
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 24,
             runSpacing: 20,
-            spacing: 20,
             children: [
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
+                constraints: const BoxConstraints(maxWidth: 650),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'READY TO CHECK A BATCH?',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 12,
-                        letterSpacing: 2.2,
-                        color: AppColors.gold,
-                        fontWeight: FontWeight.w700,
+                      'ASSESS A SAMPLE',
+                      style: _sans(
+                        11,
+                        color: _C.goldSoft,
+                        weight: FontWeight.w700,
+                        letterSpacing: 3.2,
+                        height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Text(
-                      'Turn a cacao photo into a smarter decision.',
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: 30,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      'Log a fermentation assessment for this batch.',
+                      style: _display(wide ? 34 : 26, height: 1.16),
                     ),
                   ],
                 ),
               ),
-              PrimaryPill(label: 'Start Analysis →', onTap: _openAnalysis),
+              _primaryBtn('Start an Assessment →', _openAnalysis),
             ],
           ),
         ),
@@ -667,67 +853,105 @@ class _LandingPageState extends ConsumerState<LandingPage> {
 
   Widget _footer() => Container(
     width: double.infinity,
-    color: AppColors.brown950,
-    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
-    child: Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      runSpacing: 14,
-      spacing: 20,
-      children: [
-        _brand(),
-        const Text(
-          '© 2026 CacaoGrade AI — Cacao Fermentation & Quality Assessment',
-          style: TextStyle(color: Colors.white60, fontSize: 12),
+    color: const Color(0xE0210F0A),
+    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 30),
+    child: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1300),
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 20,
+          runSpacing: 14,
+          children: [
+            _brand(),
+            Text(
+              '© 2026 CacaoGrade AI — Fermentation Stage Classification and Quality Assessment',
+              style: _sans(11, color: const Color(0xFFCBBDB4), height: 1.5),
+            ),
+            TextButton(
+              onPressed: _openDevs,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 34),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Meet the Developers',
+                style: _sans(
+                  12,
+                  color: const Color(0xFFE5AF5E),
+                  weight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
-        TextButton(
-          onPressed: _openDevs,
-          child: const Text(
-            'Meet the Developers',
-            style: TextStyle(color: AppColors.gold),
-          ),
-        ),
-      ],
+      ),
     ),
   );
+
+  // ---------------- Grid helper ----------------
+  Widget _responsiveGrid({
+    required double minItemWidth,
+    required List<Widget> children,
+    double gap = 14,
+  }) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final avail = c.maxWidth.isFinite
+            ? c.maxWidth
+            : MediaQuery.of(context).size.width;
+        var cols = ((avail + gap) / (minItemWidth + gap)).floor();
+        if (cols < 1) cols = 1;
+        if (cols > children.length) cols = children.length;
+        final itemW = (avail - gap * (cols - 1)) / cols;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final ch in children) SizedBox(width: itemW, child: ch),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _Stage {
   final String title, desc, image;
   final Color dot;
-  final bool featured;
-  const _Stage(
-    this.title,
-    this.desc,
-    this.image,
-    this.dot, {
-    this.featured = false,
-  });
+  const _Stage(this.title, this.desc, this.image, this.dot);
+}
+
+class _Step {
+  final String num, title, desc;
+  final IconData icon;
+  const _Step(this.num, this.icon, this.title, this.desc);
 }
 
 const _stageData = [
   _Stage(
     'Unfermented',
-    'Pale color, low aroma',
+    'Pale, no aroma development',
     'assets/images/unfermented-cacao.png',
     Color(0xFFCBBDB4),
   ),
   _Stage(
     'Partially Fermented',
-    'Light brown, mild aroma',
+    'Light brown, aroma still developing',
     'assets/images/partially-fermented.png',
     Color(0xFFE6AD67),
   ),
   _Stage(
     'Well-Fermented',
-    'Rich brown, good aroma',
+    'Uniform brown, aroma fully developed',
     'assets/images/well-fermented.png',
     Color(0xFF67905C),
-    featured: true,
   ),
   _Stage(
     'Over-Fermented',
-    'Dark, cracked, weak aroma',
+    'Dark and cracked, aroma diminished',
     'assets/images/over-fermented.png',
     Color(0xFFC5574B),
   ),

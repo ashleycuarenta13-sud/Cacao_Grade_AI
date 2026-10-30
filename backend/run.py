@@ -47,7 +47,7 @@ def main() -> None:
 
     uvicorn.run(
         "main:app",
-        host="127.0.0.1",
+        host="0.0.0.0",
         port=8000,
         ssl_certfile=str(cert) if use_ssl else None,
         ssl_keyfile=str(key) if use_ssl else None,
